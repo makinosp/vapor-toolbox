@@ -1,15 +1,9 @@
-FROM swift:5.9-jammy as build
+FROM swift:6.0 AS builder
 WORKDIR /build
 COPY . .
-RUN swift build --build-path /build/.build --static-swift-stdlib -c release
+RUN swift build --build-path /build/toolbox --static-swift-stdlib -c release
 
-FROM ubuntu:focal
-RUN export DEBIAN_FRONTEND=noninteractive DEBCONF_NONINTERACTIVE_SEEN=true && \
-    apt-get -q update && apt-get -q upgrade -y && apt-get install -y --no-install-recommends git ca-certificates \
-    && rm -r /var/lib/apt/lists/*
-COPY --from=build /build/.build/release/vapor /usr/bin
-
-RUN git config --global user.name "Vapor"
-RUN git config --global user.email "new@vapor.codes"
+FROM swift:6.0 AS runner
+COPY --from=builder /build/toolbox/release/vapor /usr/bin
 
 ENTRYPOINT ["vapor"]
